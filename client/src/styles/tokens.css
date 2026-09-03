@@ -21,6 +21,8 @@
   --color-brand: #8c1d1d;
   --color-brand-strong: #6b1414;
 
+  --color-backdrop: rgb(27 26 24 / 0.55);
+
   /* The inverse ring is for controls sitting on the header, which is painted with
      --color-brand-strong. The blue ring measures 1.4:1 there and all but disappears;
      the inverse ring measures 8.4:1. */
@@ -71,6 +73,8 @@
 
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+
+  --layer-dialog: 10;
 
   --transition-fast: 120ms ease-out;
 }
