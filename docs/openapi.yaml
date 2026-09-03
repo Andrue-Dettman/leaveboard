@@ -1,0 +1,670 @@
+openapi: 3.0.3
+info:
+  title: LeaveBoard API
+  version: 1.0.0
+  description: |
+    Leave request and approval API.
+
+    Identity is carried in the `X-User-Id` header holding a seeded user id. There is no
+    authentication: this is a deliberate scope cut documented in `docs/adr/0001-no-auth.md`.
+
+    All dates are calendar dates in `YYYY-MM-DD` form with no time or timezone component.
+servers:
+  - url: http://localhost:3001
+    description: Local development
+tags:
+  - name: System
+  - name: Users
+  - name: Reference
+  - name: Requests
+  - name: Approvals
+
+paths:
+  /api/health:
+    get:
+      tags: [System]
+      operationId: getHealth
+      summary: Liveness probe
+      security: []
+      responses:
+        '200':
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+
+  /api/users:
+    get:
+      tags: [Users]
+      operationId: listUsers
+      summary: List seeded users for the identity switcher
+      security: []
+      responses:
+        '200':
+          description: All seeded users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+              example:
+                - id: 1
+                  name: Maria Alvarez
+                  email: maria@example.edu
+                  role: manager
+                  managerId: null
+                - id: 2
+                  name: Sam Okafor
+                  email: sam@example.edu
+                  role: employee
+                  managerId: 1
+                - id: 3
+                  name: Priya Raman
+                  email: priya@example.edu
+                  role: employee
+                  managerId: 1
+
+  /api/me:
+    get:
+      tags: [Users]
+      operationId: getCurrentUser
+      summary: The current user, resolved from the X-User-Id header
+      responses:
+        '200':
+          description: Current user with their manager expanded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+              example:
+                id: 2
+                name: Sam Okafor
+                email: sam@example.edu
+                role: employee
+                managerId: 1
+                manager:
+                  id: 1
+                  name: Maria Alvarez
+        '400':
+          $ref: '#/components/responses/MissingIdentity'
+        '404':
+          $ref: '#/components/responses/UnknownUser'
+
+  /api/leave-types:
+    get:
+      tags: [Reference]
+      operationId: listLeaveTypes
+      summary: Leave types and their annual allowances
+      security: []
+      responses:
+        '200':
+          description: All leave types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaveType'
+              example:
+                - id: 1
+                  name: Vacation
+                  annualAllowance: 15
+                - id: 2
+                  name: Sick
+                  annualAllowance: 10
+                - id: 3
+                  name: Personal
+                  annualAllowance: 3
+
+  /api/holidays:
+    get:
+      tags: [Reference]
+      operationId: listHolidays
+      summary: US public holidays for a year, cached from Nager.Date
+      security: []
+      parameters:
+        - name: year
+          in: query
+          required: false
+          description: Four-digit year. Defaults to the current year.
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+          example: 2026
+      responses:
+        '200':
+          description: Holidays for the requested year, ascending by date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Holiday'
+              example:
+                - date: '2026-01-01'
+                  name: New Year's Day
+                - date: '2026-07-03'
+                  name: Independence Day
+                - date: '2026-11-26'
+                  name: Thanksgiving Day
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '502':
+          description: Upstream holiday provider failed and no cached copy exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                error:
+                  code: UPSTREAM_ERROR
+                  message: Could not load holidays for 2026
+
+  /api/business-days:
+    get:
+      tags: [Reference]
+      operationId: countBusinessDays
+      summary: Count business days in an inclusive date range
+      description: |
+        Weekdays between `start` and `end` inclusive, minus US public holidays. Pure
+        calculation with no write. Used by the request form for its live readout.
+      security: []
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2026-11-23'
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2026-11-27'
+      responses:
+        '200':
+          description: The computed count and the holidays that were excluded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [businessDays, holidays]
+                properties:
+                  businessDays:
+                    type: integer
+                    minimum: 0
+                  holidays:
+                    type: array
+                    description: Holidays falling on a weekday inside the range
+                    items:
+                      $ref: '#/components/schemas/Holiday'
+              example:
+                businessDays: 3
+                holidays:
+                  - date: '2026-11-26'
+                    name: Thanksgiving Day
+                  - date: '2026-11-27'
+                    name: Day after Thanksgiving
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/balances:
+    get:
+      tags: [Requests]
+      operationId: listBalances
+      summary: Per-type balance for the current user in the current calendar year
+      responses:
+        '200':
+          description: One entry per leave type
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Balance'
+              example:
+                - typeId: 1
+                  typeName: Vacation
+                  annualAllowance: 15
+                  used: 4
+                  pending: 3
+                  remaining: 11
+                - typeId: 2
+                  typeName: Sick
+                  annualAllowance: 10
+                  used: 0
+                  pending: 0
+                  remaining: 10
+        '400':
+          $ref: '#/components/responses/MissingIdentity'
+
+  /api/leave-requests:
+    get:
+      tags: [Requests]
+      operationId: listLeaveRequests
+      summary: The current user's leave requests, newest first
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/RequestStatus'
+      responses:
+        '200':
+          description: Matching requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaveRequest'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+    post:
+      tags: [Requests]
+      operationId: createLeaveRequest
+      summary: Submit a leave request
+      description: |
+        Business days are computed server-side at creation and stored, so historical
+        requests do not shift if upstream holiday data changes. Status is always
+        `pending` on creation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewLeaveRequest'
+            example:
+              typeId: 1
+              startDate: '2026-11-23'
+              endDate: '2026-11-27'
+              note: Visiting family for the holiday
+      responses:
+        '201':
+          description: The created request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveRequest'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/leave-requests/{id}/cancel:
+    post:
+      tags: [Requests]
+      operationId: cancelLeaveRequest
+      summary: Cancel one of your own pending requests
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: The cancelled request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveRequest'
+        '403':
+          description: Not the requester, or the request is no longer pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                error:
+                  code: FORBIDDEN
+                  message: Only the requester can cancel a pending request
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/approvals:
+    get:
+      tags: [Approvals]
+      operationId: listApprovals
+      summary: Pending requests from the current manager's direct reports, oldest first
+      responses:
+        '200':
+          description: The pending queue, each entry carrying its requester
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApprovalItem'
+        '403':
+          description: The current user is not a manager
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                error:
+                  code: FORBIDDEN
+                  message: Only managers can view the approval queue
+
+  /api/leave-requests/{id}/decision:
+    post:
+      tags: [Approvals]
+      operationId: decideLeaveRequest
+      summary: Approve or deny a direct report's pending request
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Decision'
+            example:
+              decision: denied
+              managerNote: We need coverage that week; try the following Monday.
+      responses:
+        '200':
+          description: The decided request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveRequest'
+        '400':
+          description: Invalid body, or a denial without a manager note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request body failed validation
+                  fields:
+                    managerNote: required when denying a request
+        '403':
+          description: Not the requester's manager, or the request is not pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                error:
+                  code: FORBIDDEN
+                  message: Only the requester's manager can decide this request
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    UserIdHeader:
+      type: apiKey
+      in: header
+      name: X-User-Id
+      description: Seeded integer user id. Stands in for a real session.
+
+  parameters:
+    RequestId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+
+  responses:
+    ValidationError:
+      description: The request failed validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Request body failed validation
+              fields:
+                endDate: must be on or after startDate
+    MissingIdentity:
+      description: The X-User-Id header is missing or not an integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: MISSING_IDENTITY
+              message: X-User-Id header is required
+    UnknownUser:
+      description: The X-User-Id header names a user that does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: UNKNOWN_USER
+              message: No user with id 99
+    NotFound:
+      description: No such resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: NOT_FOUND
+              message: No leave request with id 42
+
+  schemas:
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - VALIDATION_ERROR
+                - MISSING_IDENTITY
+                - UNKNOWN_USER
+                - FORBIDDEN
+                - NOT_FOUND
+                - UPSTREAM_ERROR
+                - INTERNAL_ERROR
+            message:
+              type: string
+            fields:
+              type: object
+              description: Field-level messages, keyed by request field name
+              additionalProperties:
+                type: string
+
+    RequestStatus:
+      type: string
+      enum: [pending, approved, denied, cancelled]
+
+    User:
+      type: object
+      required: [id, name, email, role, managerId]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [employee, manager]
+        managerId:
+          type: integer
+          nullable: true
+
+    CurrentUser:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          required: [manager]
+          properties:
+            manager:
+              nullable: true
+              type: object
+              required: [id, name]
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+
+    LeaveType:
+      type: object
+      required: [id, name, annualAllowance]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        annualAllowance:
+          type: integer
+
+    Holiday:
+      type: object
+      required: [date, name]
+      properties:
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+
+    Balance:
+      type: object
+      required: [typeId, typeName, annualAllowance, used, pending, remaining]
+      properties:
+        typeId:
+          type: integer
+        typeName:
+          type: string
+        annualAllowance:
+          type: integer
+        used:
+          type: integer
+          description: Business days across approved requests in the current calendar year
+        pending:
+          type: integer
+          description: Business days across pending requests, shown separately
+        remaining:
+          type: integer
+          description: annualAllowance minus used
+
+    LeaveRequest:
+      type: object
+      required:
+        - id
+        - userId
+        - typeId
+        - typeName
+        - startDate
+        - endDate
+        - businessDays
+        - note
+        - status
+        - managerNote
+        - createdAt
+        - decidedAt
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        typeId:
+          type: integer
+        typeName:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        businessDays:
+          type: integer
+          minimum: 0
+        note:
+          type: string
+          nullable: true
+          maxLength: 500
+        status:
+          $ref: '#/components/schemas/RequestStatus'
+        managerNote:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+          nullable: true
+        decidedBy:
+          type: integer
+          nullable: true
+
+    ApprovalItem:
+      allOf:
+        - $ref: '#/components/schemas/LeaveRequest'
+        - type: object
+          required: [requester]
+          properties:
+            requester:
+              type: object
+              required: [id, name]
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+
+    NewLeaveRequest:
+      type: object
+      required: [typeId, startDate, endDate]
+      properties:
+        typeId:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          description: Must be on or after startDate
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+
+    Decision:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approved, denied]
+        managerNote:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Required when decision is `denied`
+
+security:
+  - UserIdHeader: []

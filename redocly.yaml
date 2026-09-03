@@ -1,0 +1,9 @@
+apis:
+  leaveboard@v1:
+    root: docs/openapi.yaml
+
+rules:
+  # Endpoints that take no input and no identity have no meaningful 4xx to document.
+  # Unhandled failures surface as the INTERNAL_ERROR envelope, which is described once
+  # in the ErrorEnvelope schema rather than repeated on every operation.
+  operation-4xx-response: off
