@@ -1,0 +1,155 @@
+/* Keeps the footer at the bottom of short pages instead of part way up the viewport. */
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  position: relative;
+  background-color: var(--color-brand-strong);
+  color: var(--color-text-inverse);
+}
+
+/* Everything in the header sits on a dark red band, where the default blue ring is
+   nearly invisible. */
+.header :focus-visible {
+  outline-color: var(--color-focus-inverse);
+}
+
+.skipLink {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-brand);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-250%);
+}
+
+.skipLink:focus {
+  transform: translateY(0);
+}
+
+.headerInner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4);
+}
+
+.brand {
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--color-text-inverse);
+  text-decoration: underline;
+}
+
+.nav {
+  background-color: var(--color-brand);
+}
+
+.navList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-2) var(--space-2);
+  list-style: none;
+}
+
+.navList > li {
+  flex: 1 1 auto;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-target-min);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-inverse);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  color: var(--color-text-inverse);
+  background-color: var(--color-brand-strong);
+  text-decoration: underline;
+}
+
+/* React Router sets aria-current on the active link, so the styling and the semantics
+   cannot drift apart. */
+.navLink[aria-current='page'] {
+  background-color: var(--color-surface);
+  color: var(--color-brand);
+  font-weight: 700;
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-7);
+}
+
+.alert {
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-status-denied-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-status-denied-surface);
+  color: var(--color-status-denied-text);
+}
+
+.footer {
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.footerText {
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+@media (min-width: 640px) {
+  .navList {
+    padding: 0 var(--space-3) var(--space-2);
+  }
+
+  /* Links only stretch to fill the row while they are wrapping onto several lines. */
+  .navList > li {
+    flex: 0 0 auto;
+  }
+
+  .main {
+    padding: var(--space-6) var(--space-5) var(--space-7);
+  }
+}
+
+@media (min-width: 1024px) {
+  .headerInner {
+    padding: var(--space-4) var(--space-5);
+  }
+}
