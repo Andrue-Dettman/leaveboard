@@ -11,6 +11,14 @@ export function errorHandler(error, req, res, _next) {
     return;
   }
 
+  // express.json() rejects a body it cannot parse with a SyntaxError carrying this type.
+  // That is the client's mistake, not ours, so it must not be reported as a server fault.
+  if (error.type === 'entity.parse.failed') {
+    const invalidBody = new ApiError('VALIDATION_ERROR', 'Request body is not valid JSON');
+    res.status(invalidBody.status).json(invalidBody.toEnvelope());
+    return;
+  }
+
   console.error(error);
 
   const fault = new ApiError('INTERNAL_ERROR', 'Something went wrong on the server');

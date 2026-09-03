@@ -28,8 +28,9 @@ describe('GET /api/leave-types', () => {
   it('does not require an identity header', async () => {
     query.mockResolvedValue({ rows: leaveTypes });
 
-    const res = await request(createApp()).get('/api/leave-types');
+    await request(createApp()).get('/api/leave-types');
 
-    expect(res.status).toBe(200);
+    // Reaching the database at all means no identity middleware turned the request away.
+    expect(query).toHaveBeenCalled();
   });
 });

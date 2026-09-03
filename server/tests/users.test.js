@@ -122,3 +122,20 @@ describe('an unexpected failure', () => {
     expect(logged).toHaveBeenCalled();
   });
 });
+
+describe('a malformed request body', () => {
+  it('is reported as a validation error rather than a server fault', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const res = await request(createApp())
+      .post('/api/users')
+      .set('Content-Type', 'application/json')
+      .send('{bad');
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      error: { code: 'VALIDATION_ERROR', message: 'Request body is not valid JSON' },
+    });
+    expect(logged).not.toHaveBeenCalled();
+  });
+});
