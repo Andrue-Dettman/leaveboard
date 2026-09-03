@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
@@ -60,7 +60,7 @@ describe('Dashboard', () => {
 
     await actAs(user, '2');
 
-    await vi.waitFor(() => expect(card('Vacation')).toHaveTextContent('10 days remaining'));
+    await waitFor(() => expect(card('Vacation')).toHaveTextContent('10 days remaining'));
     expect(card('Vacation')).toHaveTextContent(/Allowance\s*15/);
     expect(card('Vacation')).toHaveTextContent(/Used\s*5/);
     expect(card('Vacation')).toHaveTextContent(/Pending\s*4/);
@@ -111,7 +111,7 @@ describe('Dashboard', () => {
 
     await actAs(user, '3');
 
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(screen.queryByRole('link', { name: /Pending approvals/ })).not.toBeInTheDocument()
     );
   });
