@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Strip AI attribution trailers from commit messages.
+sed -i -e '/^Co-Authored-By: Claude/Id' \
+       -e '/Generated with \[Claude Code\]/d' \
+       -e '/^Claude-Session:/d' \
+       -e '/claude\.ai\/code\/session_/d' "$1"
