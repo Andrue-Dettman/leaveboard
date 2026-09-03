@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
+
+vi.mock('../src/db/pool.js', () => ({ query: vi.fn() }));
 
 describe('GET /api/health', () => {
   it('reports the service is up', async () => {

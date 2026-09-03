@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { apiRouter } from './routes/index.js';
 
 export function createApp() {
   const app = express();
@@ -7,15 +9,10 @@ export function createApp() {
   app.use(cors({ origin: process.env.CLIENT_ORIGIN ?? true }));
   app.use(express.json());
 
-  app.get('/api/health', (req, res) => {
-    res.json({ ok: true });
-  });
+  app.use('/api', apiRouter);
 
-  app.use((req, res) => {
-    res.status(404).json({
-      error: { code: 'NOT_FOUND', message: `No route for ${req.method} ${req.path}` },
-    });
-  });
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
   return app;
 }
