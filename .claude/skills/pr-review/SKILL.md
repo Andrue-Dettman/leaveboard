@@ -17,13 +17,26 @@ gh pr checks <n>
 gh pr diff <n>
 ```
 
-Then one of:
+Then post the verdict and, if it passes, merge:
 
 ```
-gh pr review <n> --approve --body "<why it is good>"
-gh pr review <n> --request-changes --body "<specific items, with the fix>"
+gh pr comment <n> --body-file <verdict>
 gh pr merge <n> --squash --delete-branch
 ```
+
+Every pull request here is authored by the repository owner's account, and GitHub refuses
+`gh pr review --approve` and `--request-changes` on your own pull request:
+
+```
+failed to create review: GraphQL: Review Can not request changes on your own
+pull request (addPullRequestReview)
+```
+
+So the verdict goes in a comment instead, opening with a line that states it plainly —
+`**Review verdict: changes requested.**` or `**Review verdict: approved.**` — so the
+outcome is not buried in prose. Merging is unaffected. This is also why branch protection
+requires zero approving reviews: a solo account cannot satisfy a review requirement. The
+discipline in this file is the gate, not the GitHub setting.
 
 Requesting changes means naming the checklist item that failed, quoting the offending line,
 and saying what to do instead. "Please fix the accessibility" is not a review.
@@ -139,3 +152,37 @@ Never merge your own contract PR without telling the user what changed and why.
 Do not let Phase N+1 work start while Phase N PRs are open. When every task row in a phase
 is merged, announce "Phase N closed", run the attribution grep across `main`, and report
 what is left.
+
+## Phase-boundary review
+
+Closing a phase takes one more step: before announcing Phase N closed, run the code-review
+agent over everything the phase added, as a single diff.
+
+```
+git fetch origin
+git diff <tag-or-sha-at-phase-start>...origin/main
+```
+
+Then invoke the `code-review` skill on that range at `high` effort.
+
+Per-PR review and phase-boundary review catch different things, which is why both happen.
+Reviewing one PR asks whether that change is correct on its own. Reviewing a phase asks
+whether the pieces still make sense together — the questions no single diff can raise:
+
+- Two endpoints that each look fine but validate the same input differently.
+- A helper written in PR 1.1 that PR 1.3 duplicated instead of importing.
+- Client and server that both satisfy the contract while disagreeing about what a field
+  means in practice.
+- Error handling that is consistent inside each route and inconsistent across the set.
+- Test coverage that looks complete per PR but leaves a seam between them untested.
+
+Tag the phase boundary so the next range is unambiguous:
+
+```
+git tag -a phase-1 -m "Close Phase 1" && git push origin phase-1
+```
+
+Findings go to the user with a recommendation, not straight into a fix. Anything worth
+acting on becomes a task assigned to whichever agent owns that directory, on its own
+branch, reviewed like any other PR. Do not fix them yourself on `main` — the rule that you
+never commit to `main` after Phase 0 has no exception for cleanup.
