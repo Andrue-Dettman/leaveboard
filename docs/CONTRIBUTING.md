@@ -113,6 +113,25 @@ Two categories of finding block a merge outright:
 Approved pull requests are squash merged, so `main` reads as one commit per task, and the
 branch is deleted.
 
+### Review at phase boundaries
+
+Work is grouped into numbered phases, and every pull request is reviewed on its own. But
+reviewing one change only ever asks whether that change is correct by itself, so at the end
+of each phase the whole phase gets reviewed again as a single diff:
+
+```
+git diff phase-1...origin/main
+```
+
+That second pass is looking for the things no individual diff can show: two endpoints that
+each look fine but validate the same input differently, a helper written in one task and
+duplicated in the next instead of imported, error handling that is consistent within each
+route and inconsistent across the set, a seam between two changes that neither one's tests
+cover.
+
+Findings become their own tasks on their own branches, reviewed like anything else. Fixing
+them directly on `main` would defeat the point of protecting it.
+
 ## CI
 
 `.github/workflows/ci.yml` runs on every pull request and every push to `main`:
