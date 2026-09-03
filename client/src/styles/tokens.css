@@ -1,3 +1,80 @@
+/* Every colour, space, size and duration the app uses lives here. Components reference
+   these variables; a raw hex value or a magic pixel size in a component stylesheet is a
+   bug. Colour pairs are chosen so text clears 4.5:1 and control boundaries clear 3:1
+   against the surface they sit on. */
+
 :root {
   color-scheme: light;
+
+  /* Surfaces and text */
+  --color-canvas: #f6f5f3;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eeece8;
+  --color-text: #1b1a18;
+  --color-text-muted: #57534c;
+  --color-text-inverse: #ffffff;
+
+  /* Use border for dividers and border-strong for the edge of a control. */
+  --color-border: #d6d2cb;
+  --color-border-strong: #8b8478;
+
+  --color-brand: #8c1d1d;
+  --color-brand-strong: #6b1414;
+
+  /* The inverse ring is for controls sitting on the header, which is painted with
+     --color-brand-strong. The blue ring measures 1.4:1 there and all but disappears;
+     the inverse ring measures 8.4:1. */
+  --color-focus: #1a4fd6;
+  --color-focus-inverse: #ffd166;
+
+  /* Request status. Each status also carries a text label, never colour alone. */
+  --color-status-pending-surface: #fdf1dd;
+  --color-status-pending-border: #a9761f;
+  --color-status-pending-text: #7a4a06;
+  --color-status-approved-surface: #e4f4e8;
+  --color-status-approved-border: #3f7d53;
+  --color-status-approved-text: #14532d;
+  --color-status-denied-surface: #fbe9e7;
+  --color-status-denied-border: #b0554c;
+  --color-status-denied-text: #8c1d1d;
+  --color-status-cancelled-surface: #eeece8;
+  --color-status-cancelled-border: #8b8478;
+  --color-status-cancelled-text: #4b4741;
+
+  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.375rem;
+  --font-size-2xl: 1.75rem;
+  --line-height-tight: 1.25;
+  --line-height-base: 1.55;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgb(27 26 24 / 0.08);
+  --shadow-md: 0 4px 12px rgb(27 26 24 / 0.12);
+
+  --layout-max-width: 72rem;
+  /* WCAG 2.5.5 asks for 44px, so every control gets at least this much height. */
+  --tap-target-min: 2.75rem;
+
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  --transition-fast: 120ms ease-out;
 }
+
+/* Layout breakpoints are 640px and 1024px, written as min-width queries in the component
+   stylesheets. Custom properties cannot be used in media queries, so the values are
+   repeated there rather than declared here. */
