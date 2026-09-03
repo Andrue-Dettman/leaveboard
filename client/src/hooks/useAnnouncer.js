@@ -14,5 +14,5 @@ export function useAnnouncer() {
 
 export function useAnnouncement() {
   const context = useContext(AnnouncerContext);
-  return context ? context.message : '';
+  return context ?? { text: '', sequence: 0 };
 }

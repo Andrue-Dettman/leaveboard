@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'jest-axe';
 import { AnnouncerProvider } from '../src/components/AnnouncerProvider.jsx';
@@ -35,7 +35,7 @@ describe('LiveRegion', () => {
 
     await user.click(screen.getByRole('button', { name: 'Count days' }));
 
-    expect(region).toHaveTextContent('This request uses 4 business days');
+    await waitFor(() => expect(region).toHaveTextContent('This request uses 4 business days'));
   });
 
   it('announces politely and as a whole', () => {
@@ -49,7 +49,21 @@ describe('LiveRegion', () => {
     const { container, user } = renderRegion();
 
     await user.click(screen.getByRole('button', { name: 'Count days' }));
+    await waitFor(() => expect(container.querySelector('[aria-live]')).not.toBeEmptyDOMElement());
 
     expect(await axe(container)).toHaveNoViolations();
+  });
+  it('announces again when the same sentence is repeated', async () => {
+    const { user, region } = renderRegion();
+    const say = () => user.click(screen.getByRole('button', { name: 'Count days' }));
+
+    await say();
+    await waitFor(() => expect(region).toHaveTextContent('This request uses 4 business days'));
+
+    // The user edits a date and the count lands on the same number. The region has to
+    // change for a screen reader to read it out a second time.
+    await say();
+    await waitFor(() => expect(region).toBeEmptyDOMElement());
+    await waitFor(() => expect(region).toHaveTextContent('This request uses 4 business days'));
   });
 });
