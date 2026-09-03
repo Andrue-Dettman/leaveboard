@@ -35,6 +35,22 @@ function upstreamFails() {
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('getaddrinfo ENOTFOUND')));
 }
 
+// The socket opens and nothing ever comes back, which is how a struggling free service
+// fails far more often than by refusing the connection outright.
+function upstreamStalls() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      (url, options) =>
+        new Promise((resolve, reject) => {
+          options?.signal?.addEventListener('abort', () =>
+            reject(options.signal.reason ?? new Error('aborted'))
+          );
+        })
+    )
+  );
+}
+
 beforeEach(() => {
   query.mockReset();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -160,7 +176,8 @@ describe('GET /api/holidays', () => {
 
     const currentYear = new Date().getFullYear();
     expect(fetch).toHaveBeenCalledWith(
-      `https://date.nager.at/api/v3/PublicHolidays/${currentYear}/US`
+      `https://date.nager.at/api/v3/PublicHolidays/${currentYear}/US`,
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
   });
 
@@ -184,6 +201,28 @@ describe('GET /api/holidays', () => {
     expect(res.status).toBe(400);
     expect(res.body.error.fields).toEqual({ year: 'must be between 2000 and 2100' });
     expect(query).not.toHaveBeenCalled();
+  });
+
+  it('gives up on a provider that stalls instead of holding the request open', async () => {
+    query.mockResolvedValueOnce({ rows: [] });
+    upstreamStalls();
+
+    const res = await request(createApp()).get('/api/holidays?year=2026');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(fallbackHolidays[2026]);
+  }, 15000);
+
+  it('still serves holidays it fetched when writing them to the cache fails', async () => {
+    query
+      .mockResolvedValueOnce({ rows: [] })
+      .mockRejectedValueOnce(new Error('permission denied for table holiday_cache'));
+    upstreamReturns(upstreamPayload);
+
+    const res = await request(createApp()).get('/api/holidays?year=2026');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(normalized);
   });
 
   it('reads the cache with a parameterized query', async () => {

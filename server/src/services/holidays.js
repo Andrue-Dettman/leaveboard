@@ -5,6 +5,9 @@ import { fallbackHolidays } from './holidayFallback.js';
 const COUNTRY = 'US';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const UPSTREAM_BASE = 'https://date.nager.at/api/v3/PublicHolidays';
+// A provider that accepts the connection and then stalls would otherwise hold the request
+// open for undici's five minute default, which defeats the point of having a fallback.
+const UPSTREAM_TIMEOUT_MS = 5000;
 
 /**
  * The feed carries state-level observances beside the nationwide ones and repeats some
@@ -47,7 +50,9 @@ async function writeCache(year, holidays) {
 }
 
 async function fetchUpstream(year) {
-  const response = await fetch(`${UPSTREAM_BASE}/${year}/${COUNTRY}`);
+  const response = await fetch(`${UPSTREAM_BASE}/${year}/${COUNTRY}`, {
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+  });
 
   if (!response.ok) {
     throw new Error(`Nager.Date responded ${response.status}`);
@@ -65,7 +70,13 @@ export async function getHolidays(year) {
 
   try {
     const holidays = await fetchUpstream(year);
-    await writeCache(year, holidays);
+
+    // Caching is an optimisation, so a failed write must not discard holidays that were
+    // already fetched successfully.
+    await writeCache(year, holidays).catch((error) => {
+      console.warn(`Could not cache holidays for ${year}: ${error.message}`);
+    });
+
     return holidays;
   } catch (error) {
     console.warn(`Could not refresh holidays for ${year}: ${error.message}`);
