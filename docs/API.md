@@ -132,11 +132,22 @@ header, `404 UNKNOWN_USER` if the id is not seeded.
 US public holidays, ascending by date. `year` defaults to the current year.
 
 The server fetches from `https://date.nager.at/api/v3/PublicHolidays/{year}/US` and caches
-the response per year in `holiday_cache` with a 24-hour TTL. A cache hit never touches the
-network. If the upstream call fails and a cached copy exists, the cached copy is served even
-past its TTL — stale holidays beat no holidays. If it fails with nothing cached at all, the
-endpoint returns `502 UPSTREAM_ERROR`. Reasoning in
-[`adr/0003-holiday-caching.md`](./adr/0003-holiday-caching.md).
+the response per year in `holiday_cache` with a 24-hour TTL, giving up on the upstream call
+after five seconds so a stalled provider cannot hold the request open.
+
+Degradation is layered, because a free third-party service will eventually be unavailable:
+
+1. A cache row under 24 hours old is served without touching the network.
+2. A stale row is refreshed from upstream, but still served if that refresh fails. Stale
+   holidays beat no holidays.
+3. With nothing cached and upstream unreachable, a checked-in set is served for any year
+   the project ships one for. 2026 is checked in. This copy is deliberately not written to
+   the cache, so the next request retries upstream rather than treating the fallback as a
+   fresh answer for 24 hours.
+4. Only a year with no cache row, no reachable upstream, and no checked-in set returns
+   `502 UPSTREAM_ERROR`.
+
+Reasoning in [`adr/0003-holiday-caching.md`](./adr/0003-holiday-caching.md).
 
 ```json
 [
