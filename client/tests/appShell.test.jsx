@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { StrictMode } from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -7,12 +8,17 @@ import { axe } from 'jest-axe';
 import App from '../src/App.jsx';
 import { server } from '../src/mocks/node.js';
 
+// Rendered inside StrictMode because main.jsx mounts the app that way. StrictMode runs
+// effects twice on mount, so anything that manages focus has to be idempotent, and the
+// suite only proves that if it exercises the same configuration the browser gets.
 function renderApp(path = '/') {
   const user = userEvent.setup();
   const view = render(
-    <MemoryRouter initialEntries={[path]}>
-      <App />
-    </MemoryRouter>
+    <StrictMode>
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+      </MemoryRouter>
+    </StrictMode>
   );
   return { user, ...view };
 }

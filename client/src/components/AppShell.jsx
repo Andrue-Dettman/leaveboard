@@ -9,16 +9,16 @@ export default function AppShell() {
   const { currentUser, error } = useIdentity();
   const { pathname } = useLocation();
   const headingRef = useRef(null);
-  const hasNavigated = useRef(false);
+  const previousPathname = useRef(pathname);
 
   // React Router leaves focus where it was, which strands a screen reader user on the
   // page they just left. Focus the new heading instead, but not on first load: doing it
   // there would put the skip link behind the user before they could reach it.
+  // Comparing the pathname rather than latching a flag keeps this correct under
+  // StrictMode, which runs the effect twice on mount and would consume a one-shot flag.
   useEffect(() => {
-    if (!hasNavigated.current) {
-      hasNavigated.current = true;
-      return;
-    }
+    if (previousPathname.current === pathname) return;
+    previousPathname.current = pathname;
     headingRef.current?.focus();
   }, [pathname]);
 

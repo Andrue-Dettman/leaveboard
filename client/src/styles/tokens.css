@@ -21,8 +21,9 @@
   --color-brand: #8c1d1d;
   --color-brand-strong: #6b1414;
 
-  /* The inverse ring is for controls sitting on the brand-coloured header, where the
-     blue ring would all but disappear. */
+  /* The inverse ring is for controls sitting on the header, which is painted with
+     --color-brand-strong. The blue ring measures 1.4:1 there and all but disappears;
+     the inverse ring measures 8.4:1. */
   --color-focus: #1a4fd6;
   --color-focus-inverse: #ffd166;
 
