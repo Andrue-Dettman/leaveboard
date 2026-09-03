@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
+import { AnnouncerProvider } from './components/AnnouncerProvider.jsx';
 import AppShell from './components/AppShell.jsx';
 import { IdentityProvider } from './components/IdentityProvider.jsx';
 import Approvals from './pages/Approvals.jsx';
@@ -12,15 +13,17 @@ import Requests from './pages/Requests.jsx';
 export default function App() {
   return (
     <IdentityProvider>
-      <Routes>
-        <Route element={<AppShell />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/requests" element={<Requests />} />
-          <Route path="/requests/new" element={<NewRequest />} />
-          <Route path="/approvals" element={<Approvals />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
+      <AnnouncerProvider>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/requests" element={<Requests />} />
+            <Route path="/requests/new" element={<NewRequest />} />
+            <Route path="/approvals" element={<Approvals />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </AnnouncerProvider>
     </IdentityProvider>
   );
 }
