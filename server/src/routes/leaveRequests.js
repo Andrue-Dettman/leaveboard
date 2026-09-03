@@ -13,11 +13,15 @@ import {
 import { getHolidays } from '../services/holidays.js';
 import {
   REQUEST_STATUSES,
+  cancelPendingRequest,
   createLeaveRequest,
+  findLeaveRequest,
   findLeaveType,
   listLeaveRequests,
 } from '../services/leaveRequests.js';
-import { calendarDate, parseOrThrow } from '../validation.js';
+import { calendarDate, idParam, parseOrThrow } from '../validation.js';
+
+const pathSchema = z.object({ id: idParam });
 
 const listQuerySchema = z.object({
   status: z
@@ -106,5 +110,29 @@ leaveRequestsRouter.post(
     });
 
     res.status(201).json(created);
+  })
+);
+
+leaveRequestsRouter.post(
+  '/leave-requests/:id/cancel',
+  requireIdentity,
+  asyncHandler(async (req, res) => {
+    const { id } = parseOrThrow(pathSchema, req.params, 'Request path failed validation');
+
+    const existing = await findLeaveRequest(id);
+
+    if (!existing) {
+      throw new ApiError('NOT_FOUND', `No leave request with id ${id}`);
+    }
+
+    const cancelled = await cancelPendingRequest(id, req.user.id);
+
+    // One message for both refusals. Telling somebody which of the two applied would say
+    // whether the request is theirs, and there is nothing useful they could do with either.
+    if (!cancelled) {
+      throw new ApiError('FORBIDDEN', 'Only the requester can cancel a pending request');
+    }
+
+    res.json(cancelled);
   })
 );
