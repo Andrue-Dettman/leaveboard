@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import LiveRegion from './LiveRegion.jsx';
 import UserSwitcher from './UserSwitcher.jsx';
 import { useIdentity } from '../hooks/useIdentity.js';
 import { PageHeadingContext } from '../hooks/usePageHeading.js';
@@ -66,6 +67,8 @@ export default function AppShell() {
         </header>
 
         <main className={styles.main} id="main" tabIndex={-1}>
+          <LiveRegion />
+
           {error && (
             <p className={styles.alert} role="alert">
               The API did not answer, so the page may be empty or out of date. Check that the server

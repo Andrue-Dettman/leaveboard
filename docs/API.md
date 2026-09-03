@@ -132,11 +132,22 @@ header, `404 UNKNOWN_USER` if the id is not seeded.
 US public holidays, ascending by date. `year` defaults to the current year.
 
 The server fetches from `https://date.nager.at/api/v3/PublicHolidays/{year}/US` and caches
-the response per year in `holiday_cache` with a 24-hour TTL. A cache hit never touches the
-network. If the upstream call fails and a cached copy exists, the cached copy is served even
-past its TTL — stale holidays beat no holidays. If it fails with nothing cached at all, the
-endpoint returns `502 UPSTREAM_ERROR`. Reasoning in
-[`adr/0003-holiday-caching.md`](./adr/0003-holiday-caching.md).
+the response per year in `holiday_cache` with a 24-hour TTL, giving up on the upstream call
+after five seconds so a stalled provider cannot hold the request open.
+
+Degradation is layered, because a free third-party service will eventually be unavailable:
+
+1. A cache row under 24 hours old is served without touching the network.
+2. A stale row is refreshed from upstream, but still served if that refresh fails. Stale
+   holidays beat no holidays.
+3. With nothing cached and upstream unreachable, a checked-in set is served for any year
+   the project ships one for. 2026 is checked in. This copy is deliberately not written to
+   the cache, so the next request retries upstream rather than treating the fallback as a
+   fresh answer for 24 hours.
+4. Only a year with no cache row, no reachable upstream, and no checked-in set returns
+   `502 UPSTREAM_ERROR`.
+
+Reasoning in [`adr/0003-holiday-caching.md`](./adr/0003-holiday-caching.md).
 
 ```json
 [
@@ -153,15 +164,12 @@ calculation — it writes nothing — which is what makes it safe for the reques
 on every keystroke (debounced).
 
 It returns the holidays it excluded as well as the count, so the form can say _why_ five
-calendar days came out as three business days instead of leaving the user to guess.
+calendar days came out as four business days instead of leaving the user to guess.
 
 ```json
 {
-  "businessDays": 3,
-  "holidays": [
-    { "date": "2026-11-26", "name": "Thanksgiving Day" },
-    { "date": "2026-11-27", "name": "Day after Thanksgiving" }
-  ]
+  "businessDays": 4,
+  "holidays": [{ "date": "2026-11-26", "name": "Thanksgiving Day" }]
 }
 ```
 
@@ -220,7 +228,7 @@ The current user's own requests, newest first. `status` is optional and must be 
     "typeName": "Vacation",
     "startDate": "2026-11-23",
     "endDate": "2026-11-27",
-    "businessDays": 3,
+    "businessDays": 4,
     "note": "Visiting family for the holiday",
     "status": "pending",
     "managerNote": null,
@@ -299,7 +307,7 @@ X-User-Id: 1
     "typeName": "Vacation",
     "startDate": "2026-11-23",
     "endDate": "2026-11-27",
-    "businessDays": 3,
+    "businessDays": 4,
     "note": "Visiting family for the holiday",
     "status": "pending",
     "managerNote": null,
