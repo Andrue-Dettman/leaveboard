@@ -41,15 +41,15 @@ announcements.
 
 Codes and their statuses:
 
-| Code | Status |
-|---|---|
-| `VALIDATION_ERROR` | 400 |
-| `MISSING_IDENTITY` | 400 |
-| `UNKNOWN_USER` | 404 |
-| `FORBIDDEN` | 403 |
-| `NOT_FOUND` | 404 |
-| `UPSTREAM_ERROR` | 502 |
-| `INTERNAL_ERROR` | 500 |
+| Code               | Status |
+| ------------------ | ------ |
+| `VALIDATION_ERROR` | 400    |
+| `MISSING_IDENTITY` | 400    |
+| `UNKNOWN_USER`     | 404    |
+| `FORBIDDEN`        | 403    |
+| `NOT_FOUND`        | 404    |
+| `UPSTREAM_ERROR`   | 502    |
+| `INTERNAL_ERROR`   | 500    |
 
 Build the envelope in one place (a helper plus an Express error middleware) and route every
 failure through it. Do not hand-write the object at each call site.
@@ -62,7 +62,7 @@ matching row is `404 UNKNOWN_USER`.
 
 Endpoints marked `security: []` in the spec (`/api/health`, `/api/users`,
 `/api/leave-types`, `/api/holidays`, `/api/business-days`) must work without the header.
-`/api/users` in particular is what the client calls *before* it has an identity, so
+`/api/users` in particular is what the client calls _before_ it has an identity, so
 requiring the header there deadlocks the switcher.
 
 ## Validation

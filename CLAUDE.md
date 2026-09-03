@@ -11,10 +11,10 @@ it is a merge blocker, not a preference.
 
 ## Repository ownership
 
-| Agent | Owns | Never touches |
-|---|---|---|
-| T1 Backend | `server/`, `docs/API.md`, server ADRs | `client/` |
-| T2 Frontend | `client/`, `docs/ACCESSIBILITY.md`, front-end ADRs | `server/` |
+| Agent       | Owns                                                        | Never touches    |
+| ----------- | ----------------------------------------------------------- | ---------------- |
+| T1 Backend  | `server/`, `docs/API.md`, server ADRs                       | `client/`        |
+| T2 Frontend | `client/`, `docs/ACCESSIBILITY.md`, front-end ADRs          | `server/`        |
 | T3 Reviewer | `main`, CI, `README.md`, `docs/CONTRIBUTING.md`, deployment | feature branches |
 
 `docs/openapi.yaml` is the frozen contract. Neither builder edits it directly: if you

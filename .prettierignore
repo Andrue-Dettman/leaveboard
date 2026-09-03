@@ -3,3 +3,6 @@ dist
 coverage
 package-lock.json
 client/public/mockServiceWorker.js
+
+# Authored by hand and kept verbatim as the project specification.
+docs/DESIGN.md
