@@ -164,15 +164,12 @@ calculation — it writes nothing — which is what makes it safe for the reques
 on every keystroke (debounced).
 
 It returns the holidays it excluded as well as the count, so the form can say _why_ five
-calendar days came out as three business days instead of leaving the user to guess.
+calendar days came out as four business days instead of leaving the user to guess.
 
 ```json
 {
-  "businessDays": 3,
-  "holidays": [
-    { "date": "2026-11-26", "name": "Thanksgiving Day" },
-    { "date": "2026-11-27", "name": "Day after Thanksgiving" }
-  ]
+  "businessDays": 4,
+  "holidays": [{ "date": "2026-11-26", "name": "Thanksgiving Day" }]
 }
 ```
 
@@ -231,7 +228,7 @@ The current user's own requests, newest first. `status` is optional and must be 
     "typeName": "Vacation",
     "startDate": "2026-11-23",
     "endDate": "2026-11-27",
-    "businessDays": 3,
+    "businessDays": 4,
     "note": "Visiting family for the holiday",
     "status": "pending",
     "managerNote": null,
@@ -310,7 +307,7 @@ X-User-Id: 1
     "typeName": "Vacation",
     "startDate": "2026-11-23",
     "endDate": "2026-11-27",
-    "businessDays": 3,
+    "businessDays": 4,
     "note": "Visiting family for the holiday",
     "status": "pending",
     "managerNote": null,
