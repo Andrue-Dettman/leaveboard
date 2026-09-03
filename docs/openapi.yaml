@@ -210,12 +210,10 @@ paths:
                     items:
                       $ref: '#/components/schemas/Holiday'
               example:
-                businessDays: 3
+                businessDays: 4
                 holidays:
                   - date: '2026-11-26'
                     name: Thanksgiving Day
-                  - date: '2026-11-27'
-                    name: Day after Thanksgiving
         '400':
           $ref: '#/components/responses/ValidationError'
 
