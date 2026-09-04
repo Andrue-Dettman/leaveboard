@@ -33,6 +33,9 @@ jobs:
         run: npm run format:check
 
       - name: Validate the API contract
+        env:
+          REDOCLY_TELEMETRY: off
+          REDOCLY_SUPPRESS_UPDATE_NOTICE: 'true'
         run: npx --yes @redocly/cli@2.5.0 lint
 
       - name: Test
