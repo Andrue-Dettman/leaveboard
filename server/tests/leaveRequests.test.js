@@ -285,3 +285,114 @@ describe('POST /api/leave-requests', () => {
     expect(query).not.toHaveBeenCalled();
   });
 });
+
+describe('POST /api/leave-requests/:id/cancel', () => {
+  const cancelled = { ...storedRequest, status: 'cancelled' };
+
+  it('cancels a pending request belonging to the requester', async () => {
+    identityResolves();
+    query.mockResolvedValueOnce({ rows: [storedRequest] });
+    query.mockResolvedValueOnce({ rowCount: 1 });
+    query.mockResolvedValueOnce({ rows: [cancelled] });
+
+    const res = await request(createApp())
+      .post('/api/leave-requests/7/cancel')
+      .set('X-User-Id', '2');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(cancelled);
+  });
+
+  it('guards ownership and status in the update itself', async () => {
+    identityResolves();
+    query.mockResolvedValueOnce({ rows: [storedRequest] });
+    query.mockResolvedValueOnce({ rowCount: 1 });
+    query.mockResolvedValueOnce({ rows: [cancelled] });
+
+    await request(createApp()).post('/api/leave-requests/7/cancel').set('X-User-Id', '2');
+
+    expect(query).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining("user_id = $2 AND status = 'pending'"),
+      [7, 2]
+    );
+  });
+
+  it("refuses to cancel another user's request", async () => {
+    identityResolves();
+    query.mockResolvedValueOnce({ rows: [{ ...storedRequest, userId: 3 }] });
+    query.mockResolvedValueOnce({ rowCount: 0 });
+
+    const res = await request(createApp())
+      .post('/api/leave-requests/7/cancel')
+      .set('X-User-Id', '2');
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      error: {
+        code: 'FORBIDDEN',
+        message: 'Only the requester can cancel a pending request',
+      },
+    });
+  });
+
+  it('refuses to cancel a request that is no longer pending', async () => {
+    identityResolves();
+    query.mockResolvedValueOnce({ rows: [{ ...storedRequest, status: 'approved' }] });
+    query.mockResolvedValueOnce({ rowCount: 0 });
+
+    const res = await request(createApp())
+      .post('/api/leave-requests/7/cancel')
+      .set('X-User-Id', '2');
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('FORBIDDEN');
+  });
+
+  it('reports a request that does not exist', async () => {
+    identityResolves();
+    query.mockResolvedValueOnce({ rows: [] });
+
+    const res = await request(createApp())
+      .post('/api/leave-requests/404/cancel')
+      .set('X-User-Id', '2');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({
+      error: { code: 'NOT_FOUND', message: 'No leave request with id 404' },
+    });
+    expect(query).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects an id that is not a positive integer', async () => {
+    identityResolves();
+
+    const res = await request(createApp())
+      .post('/api/leave-requests/abc/cancel')
+      .set('X-User-Id', '2');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.fields).toEqual({ id: 'must be a positive integer' });
+    expect(query).toHaveBeenCalledOnce();
+  });
+
+  it('rejects an id too large for the table rather than failing the query', async () => {
+    identityResolves();
+
+    const res = await request(createApp())
+      .post('/api/leave-requests/9999999999/cancel')
+      .set('X-User-Id', '2');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.fields).toEqual({ id: 'must be a positive integer' });
+    expect(query).toHaveBeenCalledOnce();
+  });
+
+  it('requires an identity header', async () => {
+    const res = await request(createApp()).post('/api/leave-requests/7/cancel');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('MISSING_IDENTITY');
+    expect(query).not.toHaveBeenCalled();
+  });
+});

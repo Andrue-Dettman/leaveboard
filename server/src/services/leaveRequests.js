@@ -47,6 +47,22 @@ export async function listLeaveRequests(userId, status) {
   return rows;
 }
 
+/**
+ * The ownership and status guards are repeated in the UPDATE rather than trusted from the
+ * row that was just read. Two cancels arriving together, or a cancel racing a manager's
+ * decision, would both pass a check made before the write.
+ */
+export async function cancelPendingRequest(id, userId) {
+  const { rowCount } = await query(
+    `UPDATE leave_requests
+        SET status = 'cancelled'
+      WHERE id = $1 AND user_id = $2 AND status = 'pending'`,
+    [id, userId]
+  );
+
+  return rowCount === 1 ? findLeaveRequest(id) : null;
+}
+
 export async function findLeaveType(typeId) {
   const { rows } = await query('SELECT id, name FROM leave_types WHERE id = $1', [typeId]);
 
