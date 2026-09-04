@@ -246,6 +246,8 @@ paths:
                   remaining: 10
         '400':
           $ref: '#/components/responses/MissingIdentity'
+        '404':
+          $ref: '#/components/responses/UnknownUser'
 
   /api/leave-requests:
     get:
@@ -268,7 +270,9 @@ paths:
                 items:
                   $ref: '#/components/schemas/LeaveRequest'
         '400':
-          $ref: '#/components/responses/ValidationError'
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/UnknownUser'
     post:
       tags: [Requests]
       operationId: createLeaveRequest
@@ -296,7 +300,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/LeaveRequest'
         '400':
-          $ref: '#/components/responses/ValidationError'
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/UnknownUser'
 
   /api/leave-requests/{id}/cancel:
     post:
@@ -322,8 +328,10 @@ paths:
                 error:
                   code: FORBIDDEN
                   message: Only the requester can cancel a pending request
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/NotFoundOrUnknownUser'
 
   /api/approvals:
     get:
@@ -349,6 +357,10 @@ paths:
                 error:
                   code: FORBIDDEN
                   message: Only managers can view the approval queue
+        '400':
+          $ref: '#/components/responses/MissingIdentity'
+        '404':
+          $ref: '#/components/responses/UnknownUser'
 
   /api/leave-requests/{id}/decision:
     post:
@@ -374,17 +386,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/LeaveRequest'
         '400':
-          description: Invalid body, or a denial without a manager note
+          description: |
+            Invalid body, a denial without a manager note, or a missing X-User-Id header.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: VALIDATION_ERROR
-                  message: Request body failed validation
-                  fields:
-                    managerNote: required when denying a request
+              examples:
+                denialWithoutNote:
+                  summary: Denied without a note
+                  value:
+                    error:
+                      code: VALIDATION_ERROR
+                      message: Request body failed validation
+                      fields:
+                        managerNote: required when denying a request
+                missingIdentity:
+                  summary: No usable X-User-Id header
+                  value:
+                    error:
+                      code: MISSING_IDENTITY
+                      message: X-User-Id header is required
         '403':
           description: Not the requester's manager, or the request is not pending
           content:
@@ -396,7 +418,7 @@ paths:
                   code: FORBIDDEN
                   message: Only the requester's manager can decide this request
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/NotFoundOrUnknownUser'
 
 components:
   securitySchemes:
@@ -428,6 +450,50 @@ components:
               message: Request body failed validation
               fields:
                 endDate: must be on or after startDate
+    BadRequest:
+      description: |
+        The request failed validation, or the X-User-Id header is missing or is not an
+        integer. Both answer 400; the `code` says which.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            validationError:
+              summary: A field failed validation
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request body failed validation
+                  fields:
+                    endDate: must be on or after startDate
+            missingIdentity:
+              summary: No usable X-User-Id header
+              value:
+                error:
+                  code: MISSING_IDENTITY
+                  message: X-User-Id header is required
+    NotFoundOrUnknownUser:
+      description: |
+        No such leave request, or the X-User-Id header names a user that does not exist.
+        Both answer 404; the `code` says which.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            notFound:
+              summary: No such leave request
+              value:
+                error:
+                  code: NOT_FOUND
+                  message: No leave request with id 42
+            unknownUser:
+              summary: No such user
+              value:
+                error:
+                  code: UNKNOWN_USER
+                  message: No user with id 99
     MissingIdentity:
       description: The X-User-Id header is missing or not an integer
       content:
@@ -448,17 +514,6 @@ components:
             error:
               code: UNKNOWN_USER
               message: No user with id 99
-    NotFound:
-      description: No such resource
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            error:
-              code: NOT_FOUND
-              message: No leave request with id 42
-
   schemas:
     ErrorEnvelope:
       type: object
