@@ -10,7 +10,7 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ');
 
-export default function Dialog({ open, title, onClose, children }) {
+export default function Dialog({ open, title, onClose, returnFocusTo, children }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
   const openerRef = useRef(null);
@@ -21,15 +21,18 @@ export default function Dialog({ open, title, onClose, children }) {
 
     openerRef.current = document.activeElement;
     headingRef.current?.focus();
+    const fallback = returnFocusTo?.current;
 
     return () => {
       // Focus returns to whatever opened the dialog, including when the list behind it
-      // has re-rendered. isConnected covers the case where the action removed that
-      // control from the page altogether.
+      // has re-rendered. When the action removed that control from the page — cancelling
+      // a request takes its own cancel button away — the caller says where focus should
+      // land instead, because it is the one that knows.
       const opener = openerRef.current;
       if (opener?.isConnected) opener.focus();
+      else fallback?.focus();
     };
-  }, [open]);
+  }, [open, returnFocusTo]);
 
   useEffect(() => {
     if (!open) return undefined;
