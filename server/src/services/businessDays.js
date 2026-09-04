@@ -1,5 +1,10 @@
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+// A leave request is bounded by an annual allowance, so a range longer than this is a
+// mistake rather than a request. It also stops one call fanning out to a century of
+// holiday lookups against a third-party service.
+export const MAX_RANGE_DAYS = 366;
+
 // Calendar dates are compared and stepped in UTC throughout. Parsing 'YYYY-MM-DD' with the
 // Date constructor gives UTC midnight, which lands on the previous day once the server is
 // west of Greenwich, and UTC has no daylight saving so a day is always exactly MS_PER_DAY.
@@ -18,6 +23,12 @@ export const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 // both roll over into a different date than the one asked for.
 export function isCalendarDate(value) {
   return DATE_PATTERN.test(value) && toDate(toUtcTime(value)) === value;
+}
+
+// Today as a UTC calendar date. Every other date in the system is timezone-free, so the
+// reference point for "in the past" has to be too, rather than following the server's clock.
+export function today() {
+  return toDate(Date.now());
 }
 
 export function isWeekend(date) {
