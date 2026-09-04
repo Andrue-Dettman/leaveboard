@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { approvalsRouter } from './approvals.js';
 import { balancesRouter } from './balances.js';
 import { businessDaysRouter } from './businessDays.js';
 import { healthRouter } from './health.js';
@@ -16,3 +17,4 @@ apiRouter.use(holidaysRouter);
 apiRouter.use(businessDaysRouter);
 apiRouter.use(balancesRouter);
 apiRouter.use(leaveRequestsRouter);
+apiRouter.use(approvalsRouter);
