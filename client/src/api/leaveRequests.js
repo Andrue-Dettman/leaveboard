@@ -16,3 +16,11 @@ export function cancelLeaveRequest({ id, ...options }) {
 export function listApprovals(options) {
   return apiRequest('/api/approvals', options);
 }
+
+export function decideLeaveRequest({ id, decision, managerNote, ...options }) {
+  return apiRequest(`/api/leave-requests/${id}/decision`, {
+    ...options,
+    method: 'POST',
+    body: { decision, managerNote },
+  });
+}
