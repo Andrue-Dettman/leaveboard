@@ -33,7 +33,7 @@ jobs:
         run: npm run format:check
 
       - name: Validate the API contract
-        run: npx @redocly/cli lint
+        run: npx --yes @redocly/cli@2.5.0 lint
 
       - name: Test
         run: npm test
