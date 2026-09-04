@@ -3,9 +3,10 @@ import { query } from '../db/pool.js';
 export const REQUEST_STATUSES = ['pending', 'approved', 'denied', 'cancelled'];
 
 // Aliased in SQL rather than remapped in JavaScript, so the shape a route returns is the
-// shape the query already produced.
-const SELECT_REQUEST = `
-  SELECT lr.id,
+// shape the query already produced. The approvals queue selects the same columns and adds
+// its requester, so the list lives here rather than being written out twice.
+export const REQUEST_COLUMNS = `
+         lr.id,
          lr.user_id       AS "userId",
          lr.type_id       AS "typeId",
          lt.name          AS "typeName",
@@ -18,6 +19,10 @@ const SELECT_REQUEST = `
          lr.created_at    AS "createdAt",
          lr.decided_at    AS "decidedAt",
          lr.decided_by    AS "decidedBy"
+`;
+
+const SELECT_REQUEST = `
+  SELECT ${REQUEST_COLUMNS}
     FROM leave_requests lr
     JOIN leave_types lt ON lt.id = lr.type_id
 `;
