@@ -5,6 +5,10 @@ export function listLeaveRequests({ status, ...options } = {}) {
   return apiRequest(`/api/leave-requests${query}`, options);
 }
 
+export function createLeaveRequest({ request, ...options }) {
+  return apiRequest('/api/leave-requests', { ...options, method: 'POST', body: request });
+}
+
 export function listApprovals(options) {
   return apiRequest('/api/approvals', options);
 }
