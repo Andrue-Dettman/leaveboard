@@ -106,6 +106,34 @@ describe('Dialog', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('pulls focus back when a click on the backdrop drops it on the page', async () => {
+    const { user } = await openDialog();
+
+    await user.click(screen.getByRole('dialog').parentElement);
+    expect(document.body).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Keep the request' })).toHaveFocus();
+  });
+
+  it('pulls focus back to the last control on Shift+Tab from outside', async () => {
+    const { user } = await openDialog();
+
+    await user.click(screen.getByRole('dialog').parentElement);
+    await user.tab({ shift: true });
+
+    expect(screen.getByRole('button', { name: 'Cancel the request' })).toHaveFocus();
+  });
+
+  it('still closes on Escape once focus has left the dialog', async () => {
+    const { user } = await openDialog();
+
+    await user.click(screen.getByRole('dialog').parentElement);
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   it('has no accessibility violations', async () => {
     const { container } = await openDialog();
 

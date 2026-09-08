@@ -126,6 +126,16 @@ describe('Dashboard', () => {
     );
   });
 
+  it('announces that the dashboard has arrived', async () => {
+    renderApp();
+
+    await waitFor(() =>
+      expect(document.querySelector('[aria-live="polite"]')).toHaveTextContent(
+        'Your dashboard is ready.'
+      )
+    );
+  });
+
   it('has no accessibility violations', async () => {
     const { container } = renderApp();
     await screen.findByRole('heading', { name: 'Your balances' });
