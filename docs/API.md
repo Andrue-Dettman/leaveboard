@@ -47,6 +47,13 @@ names so the form can attach each message to the right input via `aria-described
 | `NOT_FOUND`        | 404    | No such resource                                   |
 | `UPSTREAM_ERROR`   | 502    | The holiday provider failed and nothing was cached |
 | `INTERNAL_ERROR`   | 500    | Unhandled server fault                             |
+| `RATE_LIMITED`     | 429    | Too many requests from this client                 |
+
+**Rate limiting.** Every endpoint is rate limited per client IP. A client over the limit
+gets `429 RATE_LIMITED` and a `Retry-After` header giving the seconds to wait. The limit is
+generous enough that normal use of the app will not reach it; it is there so a public
+deployment cannot be trivially hammered, and so the free-tier database is not the thing
+that absorbs the traffic.
 
 ---
 
