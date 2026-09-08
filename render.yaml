@@ -1,0 +1,26 @@
+# Render blueprint for the API. The client is deployed separately on Vercel; see
+# docs/DEPLOYMENT.md for the order these have to be set up in and why.
+services:
+  - type: web
+    name: leaveboard-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci
+    startCommand: npm start --workspace server
+    # Render restarts the service if this stops answering. It is the one route the rate
+    # limiter lets through unmetered, for exactly this reason.
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_SSL
+        value: 'true'
+      - key: RATE_LIMIT_MAX
+        value: '300'
+      # Set by hand in the dashboard: the Neon connection string, and the Vercel origins
+      # allowed to call this API. The server refuses to start without the second one.
+      - key: DATABASE_URL
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
