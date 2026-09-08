@@ -56,6 +56,16 @@ export default function Dialog({ open, title, onClose, returnFocusTo, children }
       const last = focusable.at(-1);
       const active = document.activeElement;
 
+      // Focus can end up outside the dialog without a keystroke: clicking the backdrop
+      // blurs whatever held it and leaves it on the body. So the trap has to be able to
+      // pull focus back, not only stop it leaving, and it listens on the document rather
+      // than on the dialog because a key pressed out there never reaches the dialog.
+      if (!dialog.contains(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+        return;
+      }
+
       // The heading holds focus when the dialog opens and is not itself tabbable, so
       // anything outside the list counts as sitting before the first control.
       if (event.shiftKey && (active === first || !focusable.includes(active))) {
@@ -67,8 +77,8 @@ export default function Dialog({ open, title, onClose, returnFocusTo, children }
       }
     }
 
-    dialog.addEventListener('keydown', handleKeyDown);
-    return () => dialog.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
 
   if (!open) return null;

@@ -6,6 +6,7 @@ import { listHolidays } from '../api/holidays.js';
 import { listApprovals, listLeaveRequests } from '../api/leaveRequests.js';
 import Page from '../components/Page.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
+import { useAnnouncer } from '../hooks/useAnnouncer.js';
 import { useIdentity } from '../hooks/useIdentity.js';
 import { formatDate, formatDateRange, today } from '../lib/dates.js';
 import styles from './Dashboard.module.css';
@@ -32,6 +33,7 @@ function upcomingHolidays(holidays, from) {
 
 export default function Dashboard() {
   const { userId, currentUser } = useIdentity();
+  const announce = useAnnouncer();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 
@@ -53,15 +55,18 @@ export default function Dashboard() {
       listHolidays({ ...options, year }),
       currentUser.role === 'manager' ? listApprovals(options) : Promise.resolve([]),
     ])
-      .then(([balances, requests, holidays, approvals]) =>
-        setData({ balances, requests, holidays, approvals })
-      )
+      .then(([balances, requests, holidays, approvals]) => {
+        setData({ balances, requests, holidays, approvals });
+        // Swapping the loading message for the loaded page is silent on its own, so a
+        // screen reader user who is not tabbing gets no cue that it arrived.
+        announce('Your dashboard is ready.');
+      })
       .catch((cause) => {
         if (!isAbortError(cause)) setError(cause);
       });
 
     return () => controller.abort();
-  }, [userId, currentUser]);
+  }, [userId, currentUser, announce]);
 
   if (error) {
     return (

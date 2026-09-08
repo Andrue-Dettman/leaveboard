@@ -54,12 +54,16 @@ labels. On submit with errors, focus moves to the first invalid field.
 fed through a hook. It is in the document before its text ever changes, because a region that
 appears with its message already in it announces nothing in most screen readers. Announcing
 the same sentence twice still speaks, which matters when a user edits a date and the
-business-day count lands on the same number.
+business-day count lands on the same number. The dashboard announces itself when its data
+arrives, because swapping the loading message for the loaded page is otherwise silent to
+anyone who is not tabbing through it.
 
 **Dialogs.** `role="dialog"`, `aria-modal="true"`, labelled by their heading. Focus moves in
 on open, is trapped in both directions while open, `Escape` closes, and focus returns to the
 control that opened it — including when the list behind the dialog has re-rendered, and
-including when that control no longer exists.
+including when that control no longer exists. The trap listens on the document rather than on
+the dialog, because focus can leave without a keystroke — clicking the backdrop drops it on
+the body — and a trap that only hears keys pressed inside the dialog cannot pull it back.
 
 **Colour.** Text meets 4.5:1 and interface boundaries meet 3:1 against the surface they sit
 on. Every pair in `tokens.css` was checked numerically rather than by eye. Status is never
@@ -79,14 +83,13 @@ carry their roles explicitly. Tap targets are at least 44px.
 
 Recorded honestly rather than discovered by a reviewer.
 
-- The dialog's focus trap listens on the dialog element, so clicking the backdrop moves focus
-  to `body` and a subsequent Tab can leave the dialog. A keyboard-only user cannot reach that
-  state, and `aria-modal` covers assistive technology, but it is a hole.
 - In the stacked table layout, the column name is inserted with CSS generated content while
   the header row remains in the accessibility tree. A screen reader may therefore announce the
-  column name twice. To be confirmed or ruled out in the manual pass.
-- The dashboard's transition from its loading message to loaded content is silent. A screen
-  reader user who is not tabbing gets no cue that it arrived.
+  column name twice. The obvious fix, moving the name into a real element and hiding that from
+  assistive technology, would leave the cells with no column name at all if the header row has
+  lost its association to them — which stacking makes possible, and which I cannot tell without
+  listening to it. A name said twice is a smaller problem than a value with no name, so this
+  stays as it is until the manual pass says which of the two is actually happening.
 
 ## Manual screen reader pass
 
