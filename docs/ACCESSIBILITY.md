@@ -77,6 +77,13 @@ effectively invisible, so controls inside it use a second ring colour that measu
 overriding `display` on a row or cell strips its implicit table semantics, those two elements
 carry their roles explicitly. Tap targets are at least 44px.
 
+That last claim is measured rather than eyeballed. Every page was rendered at 320, 640, 1024
+and 1440 and checked for horizontal overflow, for the table switching between stacked cards
+and table rows, and for any control under 44px in either direction. Sixteen combinations: no
+overflow at any width, the switch happening exactly at the 640 breakpoint, and one failure —
+the header wordmark was a 34px-tall link, the only control in the app that had been left
+without the shared minimum height. It now carries it like the rest.
+
 **Motion.** `prefers-reduced-motion: reduce` collapses animation and transition durations.
 
 ## Known gaps
