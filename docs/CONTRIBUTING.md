@@ -146,6 +146,18 @@ them directly on `main` would defeat the point of protecting it.
 Run all four locally before pushing. CI is there to catch what you forgot, not to be your
 first test run.
 
+## Deployment
+
+`main` is what is deployed. The API builds on Render and the client on Vercel, both from the
+repository root, both triggered by a merge — there is no release branch and no separate
+release step. [`DEPLOYMENT.md`](./DEPLOYMENT.md) is the runbook: what to create, in what
+order, and the smoke test to run afterwards.
+
+Migrations are the exception to "a merge is a release". They are not in the service start
+command and never run on their own, because `db:seed` truncates three tables and a host that
+restarts a service on its own schedule should not be able to do that to the database. Running
+them is a deliberate act, from a machine that has the connection string.
+
 ## Architecture decisions
 
 Decisions with consequences get an ADR in [`docs/adr/`](./adr/) — the context, the decision,
