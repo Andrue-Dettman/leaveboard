@@ -47,6 +47,9 @@
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target-min);
   color: var(--color-text-inverse);
   font-size: var(--font-size-xl);
   font-weight: 700;
