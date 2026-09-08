@@ -9,6 +9,11 @@ info:
     authentication: this is a deliberate scope cut documented in `docs/adr/0001-no-auth.md`.
 
     All dates are calendar dates in `YYYY-MM-DD` form with no time or timezone component.
+
+    Every endpoint is rate limited. Exceeding the limit answers `429` with the standard
+    error envelope and the code `RATE_LIMITED`, and a `Retry-After` header giving the wait
+    in seconds. It applies to every operation, so like `INTERNAL_ERROR` it is described
+    here rather than repeated on each one.
 servers:
   - url: http://localhost:3001
     description: Local development
@@ -533,6 +538,7 @@ components:
                 - NOT_FOUND
                 - UPSTREAM_ERROR
                 - INTERNAL_ERROR
+                - RATE_LIMITED
             message:
               type: string
             fields:
