@@ -7,10 +7,32 @@ get a queue of their direct reports' pending requests and approve or deny with a
 form counts business days as you pick dates, excluding weekends and US public holidays
 fetched from a live API.
 
-Built to be accessible first: WCAG 2.1 AA is the definition of done for every page, verified
-with automated `jest-axe` tests in CI and a manual screen reader pass.
+Built to be accessible first: WCAG 2.1 AA is the definition of done for every page. Every page
+and shared component has a `jest-axe` test that runs in CI, the responsive behavior is
+measured at four widths rather than eyeballed, and what has and has not been verified by hand
+is recorded in [the accessibility guide](./docs/ACCESSIBILITY.md) — including the manual
+screen reader pass, which is the one item still outstanding.
 
-> Status: in development. Live URL, screenshots, and setup screenshots land at v1.0.0.
+> Status: feature complete and running locally against a real database. Not yet deployed —
+> the live URL lands with v1.0.0, and [the deployment runbook](./docs/DEPLOYMENT.md) is what
+> it takes to get there.
+
+## Screenshots
+
+The dashboard, as a manager: balance cards, the pending-approvals callout, and the next
+public holidays pulled from the holiday API.
+
+![The LeaveBoard dashboard at desktop width, showing three balance cards, a pending approvals callout, and a list of upcoming public holidays](./docs/screenshots/dashboard-desktop.png)
+
+A manager's approval queue, oldest request first.
+
+![The approvals queue at desktop width, listing two pending requests from direct reports with a Decide button on each](./docs/screenshots/approvals-desktop.png)
+
+The same table on a phone. Below 640px each row becomes a card with its own labels rather
+than a grid you have to scroll sideways, and status is carried by the word as well as the
+color.
+
+<img src="./docs/screenshots/requests-mobile.png" alt="The requests list at phone width, with each request shown as a card labelled Type, Dates, Business days, Status, Submitted and Actions" width="376">
 
 ## Stack
 
@@ -61,4 +83,5 @@ npm run format:check
 - [`openapi.yaml`](./docs/openapi.yaml) — the machine-readable contract
 - [Accessibility](./docs/ACCESSIBILITY.md) — the checklist and how it was verified
 - [Contributing](./docs/CONTRIBUTING.md) — branching, review, and CI workflow
+- [Deployment](./docs/DEPLOYMENT.md) — the runbook for standing this up on Neon, Render and Vercel
 - [Decision records](./docs/adr/) — why the notable choices were made
